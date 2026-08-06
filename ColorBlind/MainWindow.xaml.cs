@@ -16,6 +16,8 @@ namespace ColorBlind
     /// </summary>
     public partial class MainWindow : Window
     {
+        // store the ImageManipulation object as a class member
+        private ImageManipulation imageManipulation;
         public MainWindow()
         {
             InitializeComponent();
@@ -32,7 +34,26 @@ namespace ColorBlind
                 BitmapImage bitmap = new BitmapImage(new Uri(openFileDialog.FileName));
                 image.Source = bitmap;
 
+                // convert to writeable bitmap
+                WriteableBitmap writeableBitmap = new WriteableBitmap(bitmap);
+
+                // create ImageManipulation object
+                imageManipulation = new ImageManipulation(writeableBitmap);
+
             }
         }
-    }
-}
+
+        private void TestButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (imageManipulation != null)
+            {
+                imageManipulation.ReadColorTest();
+                imageManipulation.findAllColors();
+                imageManipulation.ListAllColors();
+            }
+            else
+            {
+                MessageBox.Show("Please upload an image first.");
+            }
+        }
+}}

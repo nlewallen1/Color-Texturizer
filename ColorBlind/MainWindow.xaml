@@ -40,12 +40,15 @@
                 Content="Upload"
                 Click="UploadButton_Click"/>
             
-            <Button Content="Save"/>
+            <Button 
+                Content="Test"
+                Click="TestButton_Click"/>
         </StackPanel>
 
         <ScrollViewer
             Grid.Row="1"
             Grid.Column="0"
+            Margin="20, 0, 0, 0"
             HorizontalScrollBarVisibility="Auto"
             VerticalScrollBarVisibility="Auto">
             

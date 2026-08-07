@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Reflection;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -17,7 +18,7 @@ namespace ColorBlind
     public partial class MainWindow : Window
     {
         // store the ImageManipulation object as a class member
-        private ImageManipulation imageManipulation;
+        private ImageProcessing imageManipulation;
         public MainWindow()
         {
             InitializeComponent();
@@ -38,7 +39,7 @@ namespace ColorBlind
                 WriteableBitmap writeableBitmap = new WriteableBitmap(bitmap);
 
                 // create ImageManipulation object
-                imageManipulation = new ImageManipulation(writeableBitmap);
+                imageManipulation = new ImageProcessing(writeableBitmap);
 
             }
         }
@@ -47,13 +48,67 @@ namespace ColorBlind
         {
             if (imageManipulation != null)
             {
-                imageManipulation.ReadColorTest();
                 imageManipulation.findAllColors();
-                imageManipulation.ListAllColors();
+                // imageManipulation.ListAllColors();
+
+                // add colors to the ColorPanel
+                AddColorBorders(imageManipulation.GetColors());
             }
             else
             {
                 MessageBox.Show("Please upload an image first.");
             }
         }
-}}
+
+        private void AddColorBorders(HashSet<Color> colors)
+        {
+            ColorPanel.Children.Clear();
+
+            foreach (Color color in colors)
+            {
+                Border colorSquare = new Border
+                {
+                    Width = 60,
+                    Height = 60,
+                    Margin = new Thickness(15),
+                    Background = new SolidColorBrush(color),
+                    BorderBrush = Brushes.Black,
+                    BorderThickness = new Thickness(1)
+                };
+                colorSquare.ToolTip =$"{GetColorName(color)}\nR:{color.R} G:{color.G} B:{color.B}";
+                ColorPanel.Children.Add(colorSquare);
+            }
+        }
+
+        // check which named color a color is closest to
+        public static string GetColorName(Color color)
+        {
+            string closestName = "";
+            double smallestDistance = double.MaxValue;
+
+            foreach (var property in typeof(Colors).GetProperties())
+            {
+                 Color namedColor = (Color)property.GetValue(null)!;
+
+                int redDifference = color.R - namedColor.R;
+                int greenDifference = color.G - namedColor.G;
+                int blueDifference = color.B - namedColor.B;
+
+                double distance =
+                    redDifference * redDifference +
+                    greenDifference * greenDifference +
+                    blueDifference * blueDifference;
+
+                if (distance < smallestDistance)
+                {
+                    smallestDistance = distance;
+                    closestName = property.Name;
+                }
+            }
+
+            return closestName;
+        }
+    }
+
+
+}

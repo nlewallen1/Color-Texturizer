@@ -7,7 +7,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
 namespace ColorBlind
 {
-    public class ImageManipulation
+    public class ImageProcessing
     {
         // writeable bitmap
         WriteableBitmap bm;
@@ -17,10 +17,10 @@ namespace ColorBlind
         byte[] pixels;
 
         // store colors
-        Dictionary<Color, int> colors = new Dictionary<Color, int>();
+        HashSet<Color> colors = new HashSet<Color>();
 
         // constructor
-        public ImageManipulation(WriteableBitmap bitmap)
+        public ImageProcessing(WriteableBitmap bitmap)
         {
             bm = bitmap;
             width = bm.PixelWidth;
@@ -30,6 +30,7 @@ namespace ColorBlind
             pixels = GetBytes();
         }
 
+        // get pixel byte data
         public byte[] GetBytes()
         {
 
@@ -39,21 +40,13 @@ namespace ColorBlind
             return pixels;
         }
 
-        // temporary, reads a pixel color
-        public void ReadColorTest()
+        // get colors dictionary
+        public HashSet<Color> GetColors()
         {
-            // test output pixel at 0, 0
-            int index = 0; // pixel at (0, 0)
-            byte blue = pixels[index];
-            byte green = pixels[index + 1];
-            byte red = pixels[index + 2];
-            byte alpha = pixels[index + 3];
-
-            MessageBox.Show($"Pixel at (0, 0): R={red}, G={green}, B={blue}, A={alpha}");
-
+            return colors;
         }
 
-        // loops through all pixels, sees if it matches a dictionary color, adds if not
+        // loops through all pixels, adds unique colors to the list
         public void findAllColors()
         {
             for (int y = 0; y < height; y++)
@@ -65,32 +58,22 @@ namespace ColorBlind
                     byte blue = pixels[index];
                     byte green = pixels[index + 1];
                     byte red = pixels[index + 2];
+                    byte alpha = pixels[index + 3];
 
                     Color color = Color.FromRgb(red, green, blue);
 
-                    if (colors.ContainsKey(color))
-                    {
-                        colors[color]++;
-                    }
-                    else
-                    {
-                        colors[color] = 1;
-                    }
+                    colors.Add(color);
                 }
             }
         }
 
         // list all colors and their counts
         public void ListAllColors()
-        {
-            StringBuilder sb = new StringBuilder();
-            foreach (var kvp in colors)
+        { 
+            foreach (var color in colors)
             {
-                Color color = kvp.Key;
-                int count = kvp.Value;
-                sb.AppendLine($"Color: R={color.R}, G={color.G}, B={color.B}, Count={count}");
+                MessageBox.Show($"Color: R={color.R}, G={color.G}, B={color.B}");
             }
-            MessageBox.Show(sb.ToString());
         }
     }
 }

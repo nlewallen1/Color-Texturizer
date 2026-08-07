@@ -55,6 +55,15 @@
             <Image x:Name ="image"/>
         </ScrollViewer>
 
+        <WrapPanel
+            x:Name="ColorPanel"
+            Grid.Row="1"
+            Grid.Column="1"
+            Margin="30"
+            
+         
+        />
+
     </Grid>
 
     

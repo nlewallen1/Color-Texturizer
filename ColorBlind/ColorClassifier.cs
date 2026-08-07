@@ -80,11 +80,13 @@ namespace ColorBlind
                 name = "Orange";
             else if (hue < 70)
                 name = "Yellow";
-            else if (hue < 170)
+            else if (hue < 165)
                 name = "Green";
-            else if (hue < 260)
+            else if (hue < 200)
+                name = "Cyan";
+            else if (hue < 245)
                 name = "Blue";
-            else if (hue < 290)
+            else if (hue < 330)
                 name = "Purple";
             else
                 name = "Pink";

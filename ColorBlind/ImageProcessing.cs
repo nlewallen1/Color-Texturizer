@@ -16,8 +16,8 @@ namespace ColorBlind
         int stride;
         byte[] pixels;
 
-        // store colors
-        HashSet<Color> colors = new HashSet<Color>();
+        // store colors and their counts
+        Dictionary<Color, int> colors = new Dictionary<Color, int>();
 
         // constructor
         public ImageProcessing(WriteableBitmap bitmap)
@@ -40,8 +40,8 @@ namespace ColorBlind
             return pixels;
         }
 
-        // get colors dictionary
-        public HashSet<Color> GetColors()
+        // get colors dictonary
+        public Dictionary<Color, int> GetColors()
         {
             return colors;
         }
@@ -58,13 +58,39 @@ namespace ColorBlind
                     byte blue = pixels[index];
                     byte green = pixels[index + 1];
                     byte red = pixels[index + 2];
-                    byte alpha = pixels[index + 3];
 
                     Color color = Color.FromRgb(red, green, blue);
 
-                    colors.Add(color);
+                    if (colors.ContainsKey(color))
+                    {
+                        colors[color]++;
+                    }
+                    else
+                    {
+                        colors[color] = 1;
+                    }
                 }
             }
+            // TODO: this is only temporary, refine later
+            trimColors(2500);
+        }
+
+        // remove noise colors
+        public void trimColors(int threshold)
+        {
+            List<Color> colorsToRemove = new List<Color>();
+            foreach (var color in colors)
+            {
+                if (color.Value < threshold)
+                {
+                    colorsToRemove.Add(color.Key);
+                }
+            }
+            foreach (var color in colorsToRemove)
+            {
+                colors.Remove(color);
+            }
+
         }
 
         // list all colors and their counts
@@ -72,7 +98,7 @@ namespace ColorBlind
         { 
             foreach (var color in colors)
             {
-                MessageBox.Show($"Color: R={color.R}, G={color.G}, B={color.B}");
+                MessageBox.Show($"Color: R={color.Key.R}, G={color.Key.G}, B={color.Key.B} (Count: {color.Value})");
             }
         }
     }

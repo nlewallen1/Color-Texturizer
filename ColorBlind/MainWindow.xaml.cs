@@ -18,7 +18,7 @@ namespace ColorBlind
     public partial class MainWindow : Window
     {
         // store the ImageManipulation object as a class member
-        private ImageProcessing imageManipulation;
+        private ImageProcessing imageProcessing;
         public MainWindow()
         {
             InitializeComponent();
@@ -39,20 +39,20 @@ namespace ColorBlind
                 WriteableBitmap writeableBitmap = new WriteableBitmap(bitmap);
 
                 // create ImageManipulation object
-                imageManipulation = new ImageProcessing(writeableBitmap);
+                imageProcessing = new ImageProcessing(writeableBitmap);
 
             }
         }
 
         private void TestButton_Click(object sender, RoutedEventArgs e)
         {
-            if (imageManipulation != null)
+            if (imageProcessing != null)
             {
-                imageManipulation.findAllColors();
-                // imageManipulation.ListAllColors();
+                imageProcessing.findAllColors();
+                // imageProcessing.ListAllColors();
 
                 // add colors to the ColorPanel
-                AddColorBorders(imageManipulation.GetColors());
+                AddColorBorders(imageProcessing.GetColors());
             }
             else
             {
@@ -60,11 +60,11 @@ namespace ColorBlind
             }
         }
 
-        private void AddColorBorders(HashSet<Color> colors)
+        private void AddColorBorders(Dictionary<Color, int> colors)
         {
             ColorPanel.Children.Clear();
 
-            foreach (Color color in colors)
+            foreach (Color color in colors.Keys)
             {
                 Border colorSquare = new Border
                 {

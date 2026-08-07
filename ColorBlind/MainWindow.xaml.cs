@@ -75,39 +75,14 @@ namespace ColorBlind
                     BorderBrush = Brushes.Black,
                     BorderThickness = new Thickness(1)
                 };
-                colorSquare.ToolTip =$"{GetColorName(color)}\nR:{color.R} G:{color.G} B:{color.B}";
+                ColorClassifier colorClassifier = new ColorClassifier();
+                string name = colorClassifier.GetColorName(color);
+
+                colorSquare.ToolTip =$"{name}\nR:{color.R} G:{color.G} B:{color.B}";
                 ColorPanel.Children.Add(colorSquare);
             }
         }
 
-        // check which named color a color is closest to
-        public static string GetColorName(Color color)
-        {
-            string closestName = "";
-            double smallestDistance = double.MaxValue;
-
-            foreach (var property in typeof(Colors).GetProperties())
-            {
-                 Color namedColor = (Color)property.GetValue(null)!;
-
-                int redDifference = color.R - namedColor.R;
-                int greenDifference = color.G - namedColor.G;
-                int blueDifference = color.B - namedColor.B;
-
-                double distance =
-                    redDifference * redDifference +
-                    greenDifference * greenDifference +
-                    blueDifference * blueDifference;
-
-                if (distance < smallestDistance)
-                {
-                    smallestDistance = distance;
-                    closestName = property.Name;
-                }
-            }
-
-            return closestName;
-        }
     }
 
 

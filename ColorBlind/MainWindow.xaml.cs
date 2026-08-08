@@ -53,7 +53,7 @@ namespace ColorBlind
 
                 // add colors to the ColorPanel
                 AddColorBorders(imageProcessing.GetColors());
-                imageProcessing.TestColorGroups(imageProcessing.FindColorGroups());
+                imageProcessing.AssignTextures(imageProcessing.FindColorGroups());
             }
             else
             {

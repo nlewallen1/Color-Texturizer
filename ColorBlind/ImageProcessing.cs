@@ -95,11 +95,140 @@ namespace ColorBlind
 
         // list all colors and their counts
         public void ListAllColors()
-        { 
+        {
             foreach (var color in colors)
             {
                 MessageBox.Show($"Color: R={color.Key.R}, G={color.Key.G}, B={color.Key.B} (Count: {color.Value})");
             }
         }
+
+        // colour group finder
+        /*public void FindColorGroups()
+        {
+            // 2d array to keep track of visited pixels
+            bool[,] visited = new bool[width, height];
+
+            // list to hold color groups
+            List<ColorGroup> colorGroups = new List<ColorGroup>();
+
+            // only process colors that are in the colors dictionary
+            foreach (var color in colors) {
+                // if the color is not visited, start a new color group
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        int index = y * stride + x * 4;
+                        byte blue = pixels[index];
+                        byte green = pixels[index + 1];
+                        byte red = pixels[index + 2];
+                        Color pixelColor = Color.FromRgb(red, green, blue);
+                        if (pixelColor == color.Key && !visited[x, y])
+                        {
+                            // start a new color group
+                            ColorGroup colorGroup = new ColorGroup();
+                            colorGroup.Color = pixelColor;
+                            colorGroup.Pixels = new List<Point>();
+                            // perform flood fill to find all connected pixels of the same color
+                            FloodFill(x, y, pixelColor, visited, colorGroup.Pixels);
+                            // add the color group to the list
+                            colorGroups.Add(colorGroup);
+                        }
+                    }
+                }
+            }
+        }*/
+
+        // modified flood fill algorithm to find connected pixels of the same color
+        private void FloodFill(int startX, int startY, Color targetColor, bool[,] visited, List<Point> pixelsList)
+        {
+            var stack = new Stack<Point>();
+            stack.Push(new Point(startX, startY));
+
+            while (stack.Count > 0)
+            {
+                Point p = stack.Pop();
+                int x = (int)p.X;
+                int y = (int)p.Y;
+
+                // check bounds
+                if (x < 0 || x >= width || y < 0 || y >= height)
+                    continue;
+
+                // check if already visited
+                if (visited[x, y])
+                    continue;
+
+                // get pixel color
+                int index = y * stride + x * 4;
+                byte blue = pixels[index];
+                byte green = pixels[index + 1];
+                byte red = pixels[index + 2];
+                Color pixelColor = Color.FromRgb(red, green, blue);
+
+                // check if the pixel color matches the target color
+                if (pixelColor != targetColor)
+                    continue;
+
+                // mark as visited
+                visited[x, y] = true;
+
+                // add to the list of pixels in the color group
+                pixelsList.Add(new Point(x, y));
+
+                // push neighboring pixels instead of recursing
+                stack.Push(new Point(x + 1, y));
+                stack.Push(new Point(x - 1, y));
+                stack.Push(new Point(x, y + 1));
+                stack.Push(new Point(x, y - 1));
+            }
+        }
+
+        // find groups of color using flood fill algorithm
+        public List<ColorGroup> FindColorGroups()
+        {
+            // 2d array to keep track of visited pixels
+            bool[,] visited = new bool[width, height];
+            // list to hold color groups
+            List<ColorGroup> colorGroups = new List<ColorGroup>();
+            // only process colors that are in the colors dictionary
+            foreach (var color in colors)
+            {
+                // if the color is not visited, start a new color group
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        int index = y * stride + x * 4;
+                        byte blue = pixels[index];
+                        byte green = pixels[index + 1];
+                        byte red = pixels[index + 2];
+                        Color pixelColor = Color.FromRgb(red, green, blue);
+                        if (pixelColor == color.Key && !visited[x, y])
+                        {
+                            // start a new color group
+                            ColorGroup colorGroup = new ColorGroup();
+                            colorGroup.Color = pixelColor;
+                            colorGroup.Pixels = new List<Point>();
+                            // perform flood fill to find all connected pixels of the same color
+                            FloodFill(x, y, pixelColor, visited, colorGroup.Pixels);
+                            // add the color group to the list
+                            colorGroups.Add(colorGroup);
+                        }
+                    }
+                }
+            }
+            return colorGroups;
+        }
+        // list all color groups and their pixel counts
+        public void ListColorGroups(List<ColorGroup> colorGroups)
+        {
+            foreach (var group in colorGroups)
+            {
+                MessageBox.Show($"Color: R={group.Color.R}, G={group.Color.G}, B={group.Color.B} (Pixel Count: {group.Pixels.Count})");
+            }
+        }
+
+        //TODO : test color groups by randomly assigning new color to each group and changing
     }
 }

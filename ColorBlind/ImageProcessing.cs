@@ -59,6 +59,13 @@ namespace ColorBlind
                     byte green = pixels[index + 1];
                     byte red = pixels[index + 2];
 
+                    // ignore near-white and near-black pixels
+                    if (red > 245 && green > 245 && blue > 245)
+                        continue;
+
+                    if (red < 10 && green < 10 && blue < 10)
+                        continue;
+
                     Color color = Color.FromRgb(red, green, blue);
 
                     if (colors.ContainsKey(color))
@@ -101,43 +108,6 @@ namespace ColorBlind
                 MessageBox.Show($"Color: R={color.Key.R}, G={color.Key.G}, B={color.Key.B} (Count: {color.Value})");
             }
         }
-
-        // colour group finder
-        /*public void FindColorGroups()
-        {
-            // 2d array to keep track of visited pixels
-            bool[,] visited = new bool[width, height];
-
-            // list to hold color groups
-            List<ColorGroup> colorGroups = new List<ColorGroup>();
-
-            // only process colors that are in the colors dictionary
-            foreach (var color in colors) {
-                // if the color is not visited, start a new color group
-                for (int y = 0; y < height; y++)
-                {
-                    for (int x = 0; x < width; x++)
-                    {
-                        int index = y * stride + x * 4;
-                        byte blue = pixels[index];
-                        byte green = pixels[index + 1];
-                        byte red = pixels[index + 2];
-                        Color pixelColor = Color.FromRgb(red, green, blue);
-                        if (pixelColor == color.Key && !visited[x, y])
-                        {
-                            // start a new color group
-                            ColorGroup colorGroup = new ColorGroup();
-                            colorGroup.Color = pixelColor;
-                            colorGroup.Pixels = new List<Point>();
-                            // perform flood fill to find all connected pixels of the same color
-                            FloodFill(x, y, pixelColor, visited, colorGroup.Pixels);
-                            // add the color group to the list
-                            colorGroups.Add(colorGroup);
-                        }
-                    }
-                }
-            }
-        }*/
 
         // modified flood fill algorithm to find connected pixels of the same color
         private void FloodFill(int startX, int startY, Color targetColor, bool[,] visited, List<Point> pixelsList)
@@ -229,6 +199,47 @@ namespace ColorBlind
             }
         }
 
-        //TODO : test color groups by randomly assigning new color to each group and changing
+        // test color groups by randomly assigning new color to each group and changing
+        public void TestColorGroups(List<ColorGroup> colorGroups)
+        {
+            Random random = new Random();
+
+            // dictionary to hold if this color has already been assigned a new color
+            Dictionary<Color, Color> colorMapping = new Dictionary<Color, Color>();
+
+            foreach (var group in colorGroups)
+            {
+                Color newColor;
+                // generate random color if this pixel's color has not been seen yet
+                if (!colorMapping.ContainsKey(group.Color)) {
+                    // generate a random new color
+                    newColor = Color.FromRgb((byte)random.Next(256), (byte)random.Next(256), (byte)random.Next(256));
+                    colorMapping[group.Color] = newColor;
+                } else
+                {
+                    newColor = colorMapping[group.Color];
+                }
+                // change the color of all pixels in the group to the new color
+                foreach (var pixel in group.Pixels)
+                {
+                    int x = (int)pixel.X;
+                    int y = (int)pixel.Y;
+                    int index = y * stride + x * 4;
+                    pixels[index] = newColor.B; // blue
+                    pixels[index + 1] = newColor.G; // green
+                    pixels[index + 2] = newColor.R; // red
+
+                }
+
+
+            }
+            // update the pixel in the bitmap
+            bm.WritePixels(
+                new Int32Rect(0, 0, width, height),
+                pixels,
+                stride,
+                0);
+        }
+
     }
 }

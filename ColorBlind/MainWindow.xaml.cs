@@ -33,10 +33,10 @@ namespace ColorBlind
             {
                 // Load the selected image into the Image control
                 BitmapImage bitmap = new BitmapImage(new Uri(openFileDialog.FileName));
-                image.Source = bitmap;
 
                 // convert to writeable bitmap
                 WriteableBitmap writeableBitmap = new WriteableBitmap(bitmap);
+                image.Source = writeableBitmap;
 
                 // create ImageManipulation object
                 imageProcessing = new ImageProcessing(writeableBitmap);
@@ -53,7 +53,6 @@ namespace ColorBlind
 
                 // add colors to the ColorPanel
                 AddColorBorders(imageProcessing.GetColors());
-                imageProcessing.ListColorGroups(imageProcessing.FindColorGroups());
                 imageProcessing.TestColorGroups(imageProcessing.FindColorGroups());
             }
             else

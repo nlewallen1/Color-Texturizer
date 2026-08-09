@@ -108,33 +108,55 @@ namespace ColorBlind
         }
 
         // assign a texture type to a color randomly, avoiding duplicates
-        private void textureAssigner(Dictionary<Color, int> colors)
+        // randomly assigns a texture file to each newly-found color
+        public void textureAssigner(Dictionary<Color, int> colors)
         {
+            string texturesFolder = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Textures");
 
-
-            List<string> availableTextures = new List<string>
+            if (!System.IO.Directory.Exists(texturesFolder))
             {
-                "Horizontal",
-                "Dots",
-                "VerticalLines",
-                "DiagonalLines",
-                "BackslashLines",
-                "Crosshatch"
-            };
+                System.Diagnostics.Debug.WriteLine($"Textures folder not found: {texturesFolder}");
+                return;
+            }
 
-            // for each color, assign a random texture from the available textures
-            foreach (var color in colors.Keys)
+            string[] textureFiles = System.IO.Directory.GetFiles(texturesFolder, "*.*")
+                .Where(f => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
+                         || f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
+                         || f.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+
+            if (textureFiles.Length == 0)
             {
-                if (availableTextures.Count == 0)
-                {
-                    break;
-                }
-                int randomIndex = random.Next(availableTextures.Count);
-                string selectedTexture = availableTextures[randomIndex];
-                // assign the selected texture to the color
-                colorTextures[color] = selectedTexture;
-                // remove the assigned texture from the available list to avoid duplicates
-                availableTextures.RemoveAt(randomIndex);
+                System.Diagnostics.Debug.WriteLine("No texture files found in Textures folder.");
+                return;
+            }
+
+            // colors that still need a texture assigned
+            List<Color> unassigned = colors.Keys.Where(c => !colorTextures.ContainsKey(c)).ToList();
+
+            if (unassigned.Count == 0)
+                return;
+
+            if (unassigned.Count > textureFiles.Length)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"Warning: {unassigned.Count} colors but only {textureFiles.Length} textures available — some will repeat.");
+            }
+
+            // shuffle a copy of the texture list (Fisher-Yates)
+            List<string> shuffled = textureFiles.ToList();
+            for (int i = shuffled.Count - 1; i > 0; i--)
+            {
+                int j = random.Next(i + 1);
+                (shuffled[i], shuffled[j]) = (shuffled[j], shuffled[i]);
+            }
+
+            for (int i = 0; i < unassigned.Count; i++)
+            {
+                // wrap around with modulo if there are more colors than textures
+                string chosen = shuffled[i % shuffled.Count];
+                colorTextures[unassigned[i]] = chosen;
+                System.Diagnostics.Debug.WriteLine($"Assigned {System.IO.Path.GetFileName(chosen)} to color {unassigned[i]}");
             }
         }
 
@@ -279,206 +301,133 @@ namespace ColorBlind
                 0);
         }
 
-        public void ApplyHorizontalLines(ColorGroup group)
+        // applies a single texture to every color group found via flood fill
+        // (temporary version — no per-color texture lookup yet)
+        public WriteableBitmap ApplyTextures()
         {
-            int spacing = 10;
-            int thickness = 3;
+            List<ColorGroup> colorGroups = FindColorGroups();
 
-            foreach (Point pixel in group.Pixels)
-            {
-                int x = (int)pixel.X;
-                int y = (int)pixel.Y;
-
-                // determine whether this pixel should contain a stripe
-                if (y % spacing < thickness)
-                {
-                    int index = y * stride + x * 4;
-
-                    pixels[index] = 0;
-                    pixels[index + 1] = 0;
-                    pixels[index + 2] = 0;
-                }
-            }
-
-        }
-
-        public void ApplyDots(ColorGroup group)
-        {
-            int spacing = 10;
-            int radius = 2;
-
-            foreach (Point pixel in group.Pixels)
-            {
-                int x = (int)pixel.X;
-                int y = (int)pixel.Y;
-
-                // determine the pixel's position within the repeating dot pattern
-                int xOffset = x % spacing;
-                int yOffset = y % spacing;
-
-                // determine the distance from the center of the dot
-                int center = spacing / 2;
-                int dx = xOffset - center;
-                int dy = yOffset - center;
-
-                // check whether this pixel falls inside the dot
-                if (dx * dx + dy * dy <= radius * radius)
-                {
-                    int index = y * stride + x * 4;
-
-                    // make the texture pixel black
-                    pixels[index] = 0;       // blue
-                    pixels[index + 1] = 0;   // green
-                    pixels[index + 2] = 0;   // red
-                }
-            }
-        }
-
-        public void ApplyCrosshatch(ColorGroup group)
-        {
-            int spacing = 10;
-            int thickness = 2;
-
-            foreach (Point pixel in group.Pixels)
-            {
-                int x = (int)pixel.X;
-                int y = (int)pixel.Y;
-
-                // determine the pixel's position in the repeating pattern
-                int diagonal1 = (x + y) % spacing;
-                int diagonal2 = (x - y + spacing) % spacing;
-
-                // check whether the pixel falls on either diagonal
-                if (diagonal1 < thickness || diagonal2 < thickness)
-                {
-                    int index = y * stride + x * 4;
-
-                    // make the texture pixel black
-                    pixels[index] = 0;       // blue
-                    pixels[index + 1] = 0;   // green
-                    pixels[index + 2] = 0;   // red
-                }
-            }
-        }
-
-        public void ApplyVerticalLines(ColorGroup group)
-        {
-            int spacing = 10;
-            int thickness = 2;
-
-            foreach (Point pixel in group.Pixels)
-            {
-                int x = (int)pixel.X;
-                int y = (int)pixel.Y;
-
-                // determine the pixel's position in the repeating pattern
-                int offset = x % spacing;
-
-                // check whether the pixel falls inside a vertical line
-                if (offset < thickness)
-                {
-                    int index = y * stride + x * 4;
-
-                    // make the texture pixel black
-                    pixels[index] = 0;       // blue
-                    pixels[index + 1] = 0;   // green
-                    pixels[index + 2] = 0;   // red
-                }
-            }
-        }
-
-        public void ApplyDiagonalLines(ColorGroup group)
-        {
-            int spacing = 10;
-            int thickness = 2;
-
-            foreach (Point pixel in group.Pixels)
-            {
-                int x = (int)pixel.X;
-                int y = (int)pixel.Y;
-
-                // determine the pixel's position in the repeating diagonal pattern
-                int offset = (x + y) % spacing;
-
-                // check whether the pixel falls inside a diagonal line
-                if (offset < thickness)
-                {
-                    int index = y * stride + x * 4;
-
-                    // make the texture pixel black
-                    pixels[index] = 0;       // blue
-                    pixels[index + 1] = 0;   // green
-                    pixels[index + 2] = 0;   // red
-                }
-            }
-        }
-
-        public void ApplyBackslashLines(ColorGroup group)
-        {
-            int spacing = 10;
-            int thickness = 2;
-
-            foreach (Point pixel in group.Pixels)
-            {
-                int x = (int)pixel.X;
-                int y = (int)pixel.Y;
-
-                // determine the pixel's position in the repeating diagonal pattern
-                int offset = (x - y + spacing) % spacing;
-
-                // check whether the pixel falls inside a diagonal line
-                if (offset < thickness)
-                {
-                    int index = y * stride + x * 4;
-
-                    // make the texture pixel black
-                    pixels[index] = 0;       // blue
-                    pixels[index + 1] = 0;   // green
-                    pixels[index + 2] = 0;   // red
-                }
-            }
-        }
-
-        public void AssignTextures(List<ColorGroup> colorGroups)
-        {
             foreach (var group in colorGroups)
             {
-                if (colorTextures.TryGetValue(group.Color, out string textureType))
+                if (group.Pixels.Count == 0)
+                    continue;
+
+                if (!colorTextures.ContainsKey(group.Color))
                 {
-                    switch (textureType)
-                    {
-                        case "HorizontalLines":
-                            ApplyHorizontalLines(group);
-                            break;
-                        case "Dots":
-                            ApplyDots(group);
-                            break;
-                        case "Crosshatch":
-                            ApplyCrosshatch(group);
-                            break;
-                        case "VerticalLines":
-                            ApplyVerticalLines(group);
-                            break;
-                        case "DiagonalLines":
-                            ApplyDiagonalLines(group);
-                            break;
-                        case "BackslashLines":
-                            ApplyBackslashLines(group);
-                            break;
-                        default:
-                            // No texture assigned
-                            break;
-                    }
+                    System.Diagnostics.Debug.WriteLine($"No texture assigned for color {group.Color}, skipping.");
+                    continue;
+                }
+
+                string texturePath = colorTextures[group.Color];
+                BitmapSource texture = LoadTexture(texturePath);
+
+                int tw = texture.PixelWidth;
+                int th = texture.PixelHeight;
+                int tStride = tw * 4;
+                byte[] texPixels = new byte[th * tStride];
+                texture.CopyPixels(texPixels, tStride, 0);
+
+                int minX = group.Pixels.Min(p => (int)p.X);
+                int minY = group.Pixels.Min(p => (int)p.Y);
+
+                foreach (Point p in group.Pixels)
+                {
+                    int x = (int)p.X;
+                    int y = (int)p.Y;
+                    int i = y * stride + x * 4;
+
+                    int tx = (x - minX) % tw;
+                    int ty = (y - minY) % th;
+                    if (tx < 0) tx += tw;
+                    if (ty < 0) ty += th;
+                    int ti = ty * tStride + tx * 4;
+
+                    byte texB = texPixels[ti];
+                    byte texG = texPixels[ti + 1];
+                    byte texR = texPixels[ti + 2];
+                    byte texA = texPixels[ti + 3];   // texture's alpha at this pixel
+
+                    double alpha = texA / 255.0;
+
+                    byte srcB = pixels[i];
+                    byte srcG = pixels[i + 1];
+                    byte srcR = pixels[i + 2];
+
+                    // alpha-over blend: texture color where opaque, original color where transparent
+                    pixels[i] = (byte)(texB * alpha + srcB * (1 - alpha));
+                    pixels[i + 1] = (byte)(texG * alpha + srcG * (1 - alpha));
+                    pixels[i + 2] = (byte)(texR * alpha + srcR * (1 - alpha));
+                    // pixels[i + 3] (alpha) left untouched — stays fully opaque
                 }
             }
 
+            WriteableBitmap result = new WriteableBitmap(width, height, bm.DpiX, bm.DpiY, PixelFormats.Bgra32, null);
+            result.WritePixels(new Int32Rect(0, 0, width, height), pixels, stride, 0);
+            bm = result;
+            return result;
+        }
 
-            // write all modified pixels back to the bitmap
-            bm.WritePixels(
-                new Int32Rect(0, 0, width, height),
-                pixels,
-                stride,
-                0);
+        // now loads from a plain file path instead of a pack URI
+        private BitmapSource LoadTexture(string path)
+        {
+            BitmapImage img = new BitmapImage();
+            img.BeginInit();
+            img.UriSource = new Uri(path, UriKind.Absolute);
+            img.CacheOption = BitmapCacheOption.OnLoad;
+            img.EndInit();
+
+            return new FormatConvertedBitmap(img, PixelFormats.Bgra32, null, 0);
+        }
+
+        public string GetTextureForColor(Color color)
+        {
+            if (colorTextures.ContainsKey(color))
+                return colorTextures[color];
+            return null;
+        }
+
+        // creates a small preview bitmap showing a solid color with the texture overlaid,
+        // for use in UI swatches
+        public BitmapSource CreateSwatchPreview(Color baseColor, string texturePath, int size = 60)
+        {
+            BitmapSource texture = LoadTexture(texturePath);
+
+            int tw = texture.PixelWidth;
+            int th = texture.PixelHeight;
+            int tStride = tw * 4;
+            byte[] texPixels = new byte[th * tStride];
+            texture.CopyPixels(texPixels, tStride, 0);
+
+            int stride = size * 4;
+            byte[] outPixels = new byte[size * stride];
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    int i = y * stride + x * 4;
+
+                    int tx = x % tw;
+                    int ty = y % th;
+                    int ti = ty * tStride + tx * 4;
+
+                    byte texB = texPixels[ti];
+                    byte texG = texPixels[ti + 1];
+                    byte texR = texPixels[ti + 2];
+                    byte texA = texPixels[ti + 3];
+
+                    double alpha = texA / 255.0;
+
+                    outPixels[i] = (byte)(texB * alpha + baseColor.B * (1 - alpha));
+                    outPixels[i + 1] = (byte)(texG * alpha + baseColor.G * (1 - alpha));
+                    outPixels[i + 2] = (byte)(texR * alpha + baseColor.R * (1 - alpha));
+                    outPixels[i + 3] = 255;
+                }
+            }
+
+            WriteableBitmap result = new WriteableBitmap(size, size, 96, 96, PixelFormats.Bgra32, null);
+            result.WritePixels(new Int32Rect(0, 0, size, size), outPixels, stride, 0);
+            return result;
         }
 
     }

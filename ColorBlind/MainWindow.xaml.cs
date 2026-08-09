@@ -49,11 +49,14 @@ namespace ColorBlind
             if (imageProcessing != null)
             {
                 imageProcessing.findAllColors();
-                // imageProcessing.ListAllColors();
 
                 // add colors to the ColorPanel
                 AddColorBorders(imageProcessing.GetColors());
-                imageProcessing.AssignTextures(imageProcessing.FindColorGroups());
+
+
+                // test texture
+                WriteableBitmap textured = imageProcessing.ApplyTextures();
+                image.Source = textured;
             }
             else
             {
@@ -72,19 +75,31 @@ namespace ColorBlind
                     Width = 60,
                     Height = 60,
                     Margin = new Thickness(15),
-                    Background = new SolidColorBrush(color),
                     BorderBrush = Brushes.Black,
                     BorderThickness = new Thickness(1)
                 };
+
+                string texturePath = imageProcessing.GetTextureForColor(color);
+
+                if (texturePath != null)
+                {
+                    BitmapSource swatch = imageProcessing.CreateSwatchPreview(color, texturePath, 60);
+                    colorSquare.Background = new ImageBrush(swatch);
+                }
+                else
+                {
+                    // fallback if no texture was assigned to this color
+                    colorSquare.Background = new SolidColorBrush(color);
+                }
+
                 ColorClassifier colorClassifier = new ColorClassifier();
                 string name = colorClassifier.GetColorName(color);
 
-                colorSquare.ToolTip =$"{name}\nR:{color.R} G:{color.G} B:{color.B}";
+                colorSquare.ToolTip = $"{name}\nR:{color.R} G:{color.G} B:{color.B}";
                 ColorPanel.Children.Add(colorSquare);
             }
         }
 
     }
-
-
 }
+

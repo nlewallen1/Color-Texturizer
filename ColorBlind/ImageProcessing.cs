@@ -83,7 +83,7 @@ namespace ColorBlind
                 }
             }
             // TODO: this is only temporary, refine later
-            trimColors(2500);
+            trimColors(500);
 
             // assign textures to each color
             textureAssigner(colors);
@@ -169,11 +169,20 @@ namespace ColorBlind
             }
         }
 
+        // calculate color distance
+        private double ColorDistance(byte r1, byte g1, byte b1, byte r2, byte g2, byte b2)
+        {
+            double dr = r1 - r2;
+            double dg = g1 - g2;
+            double db = b1 - b2;
+            return Math.Sqrt(dr * dr + dg * dg + db * db);
+        }
         // modified flood fill algorithm to find connected pixels of the same color
-        private void FloodFill(int startX, int startY, Color targetColor, bool[,] visited, List<Point> pixelsList)
+        private void FloodFill(int startX, int startY, Color seedColor, bool[,] visited, List<Point> pixelsList, double tolerance = 20.0)
         {
             var stack = new Stack<Point>();
             stack.Push(new Point(startX, startY));
+            visited[startX, startY] = true;
 
             while (stack.Count > 0)
             {
@@ -181,73 +190,71 @@ namespace ColorBlind
                 int x = (int)p.X;
                 int y = (int)p.Y;
 
-                // check bounds
-                if (x < 0 || x >= width || y < 0 || y >= height)
-                    continue;
-
-                // check if already visited
-                if (visited[x, y])
-                    continue;
-
-                // get pixel color
                 int index = y * stride + x * 4;
                 byte blue = pixels[index];
                 byte green = pixels[index + 1];
                 byte red = pixels[index + 2];
-                Color pixelColor = Color.FromRgb(red, green, blue);
 
-                // check if the pixel color matches the target color
-                if (pixelColor != targetColor)
+                // compare against the seed color, not exact match
+                double distance = ColorDistance(red, green, blue, seedColor.R, seedColor.G, seedColor.B);
+                if (distance > tolerance)
                     continue;
 
-                // mark as visited
-                visited[x, y] = true;
-
-                // add to the list of pixels in the color group
                 pixelsList.Add(new Point(x, y));
 
-                // push neighboring pixels instead of recursing
-                stack.Push(new Point(x + 1, y));
-                stack.Push(new Point(x - 1, y));
-                stack.Push(new Point(x, y + 1));
-                stack.Push(new Point(x, y - 1));
+                TryPush(x + 1, y, stack, visited);
+                TryPush(x - 1, y, stack, visited);
+                TryPush(x, y + 1, stack, visited);
+                TryPush(x, y - 1, stack, visited);
             }
+        }
+
+        private void TryPush(int x, int y, Stack<Point> stack, bool[,] visited)
+        {
+            if (x < 0 || x >= width || y < 0 || y >= height)
+                return;
+            if (visited[x, y])
+                return;
+
+            visited[x, y] = true; // mark as soon as it's queued, not when it's dequeued
+            stack.Push(new Point(x, y));
         }
 
         // find groups of color using flood fill algorithm
         public List<ColorGroup> FindColorGroups()
         {
-            // 2d array to keep track of visited pixels
             bool[,] visited = new bool[width, height];
-            // list to hold color groups
             List<ColorGroup> colorGroups = new List<ColorGroup>();
-            // only process colors that are in the colors dictionary
-            foreach (var color in colors)
+
+            // loop through image
+            for (int y = 0; y < height; y++)
             {
-                // if the color is not visited, start a new color group
-                for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++)
                 {
-                    for (int x = 0; x < width; x++)
+                    if (visited[x, y])
+                        continue;
+
+                    int index = y * stride + x * 4;
+                    byte blue = pixels[index];
+                    byte green = pixels[index + 1];
+                    byte red = pixels[index + 2];
+                    Color pixelColor = Color.FromRgb(red, green, blue);
+
+                    // only start a group if this color is one we're tracking
+                    if (!colors.ContainsKey(pixelColor))
                     {
-                        int index = y * stride + x * 4;
-                        byte blue = pixels[index];
-                        byte green = pixels[index + 1];
-                        byte red = pixels[index + 2];
-                        Color pixelColor = Color.FromRgb(red, green, blue);
-                        if (pixelColor == color.Key && !visited[x, y])
-                        {
-                            // start a new color group
-                            ColorGroup colorGroup = new ColorGroup();
-                            colorGroup.Color = pixelColor;
-                            colorGroup.Pixels = new List<Point>();
-                            // perform flood fill to find all connected pixels of the same color
-                            FloodFill(x, y, pixelColor, visited, colorGroup.Pixels);
-                            // add the color group to the list
-                            colorGroups.Add(colorGroup);
-                        }
+                        visited[x, y] = true; // mark so we don't re-check this pixel's color again
+                        continue;
                     }
+
+                    ColorGroup colorGroup = new ColorGroup();
+                    colorGroup.Color = pixelColor;
+                    colorGroup.Pixels = new List<Point>();
+                    FloodFill(x, y, pixelColor, visited, colorGroup.Pixels);
+                    colorGroups.Add(colorGroup);
                 }
             }
+
             return colorGroups;
         }
         // list all color groups and their pixel counts

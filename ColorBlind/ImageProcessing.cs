@@ -24,6 +24,8 @@ namespace ColorBlind
         // store texture type for each color found
         Dictionary<Color, string> colorTextures = new Dictionary<Color, string>();
 
+        List<ColorGroup> colorGroups = new List<ColorGroup>();
+
         // constructor
         public ImageProcessing(WriteableBitmap bitmap)
         {
@@ -43,6 +45,12 @@ namespace ColorBlind
             byte[] pixels = new byte[height * stride];
             bm.CopyPixels(pixels, stride, 0);
             return pixels;
+        }
+
+        // get color groups
+        public List<ColorGroup> GetColorGroups()
+        {
+            return colorGroups;
         }
 
         // get colors dictonary
@@ -152,6 +160,10 @@ namespace ColorBlind
 
                     Color color = QuantizeColor(red, green, blue);
 
+                    // check near-white/near-black on the QUANTIZED color, with a looser threshold
+                    if (color.R > 220 && color.G > 220 && color.B > 220) continue;
+                    if (color.R < 30 && color.G < 30 && color.B < 30) continue;
+
                     if (colors.ContainsKey(color))
                         colors[color]++;
                     else
@@ -164,8 +176,11 @@ namespace ColorBlind
         }
 
         // trims noisy colors
-        public void trimColors(int minPixelCount = 500)
+        private Color? largestColor = null;
+        public void trimColors(double minPixelPercent = 0.5)
         {
+            int minPixelCount = (int)((bm.PixelWidth * bm.PixelHeight) * (minPixelPercent/ 100.0));
+
             // remove noise first
             var noise = colors.Where(c => c.Value < minPixelCount).Select(c => c.Key).ToList();
             foreach (var color in noise)
@@ -175,15 +190,21 @@ namespace ColorBlind
             if (colors.Count > 1)
             {
                 Color largest = colors.OrderByDescending(c => c.Value).First().Key;
+                largestColor = largest;
                 colors.Remove(largest);
             }
         }
 
+        // get the largest color that was removed
+        public Color? GetLargestColor()
+        {
+            return largestColor;
+        }
+
         // find groups of colors using flood fill
-        public List<ColorGroup> FindColorGroups()
+        public void FindColorGroups()
         {
             bool[,] visited = new bool[width, height];
-            List<ColorGroup> colorGroups = new List<ColorGroup>();
 
             for (int y = 0; y < height; y++)
             {
@@ -196,6 +217,8 @@ namespace ColorBlind
                     byte blue = pixels[index];
                     byte green = pixels[index + 1];
                     byte red = pixels[index + 2];
+
+
                     Color pixelColor = QuantizeColor(red, green, blue);
 
                     if (!colors.ContainsKey(pixelColor))
@@ -212,7 +235,7 @@ namespace ColorBlind
                 }
             }
 
-            return colorGroups;
+
         }
 
         // find neighboring pixels that should be in the sasme color group
@@ -302,8 +325,6 @@ namespace ColorBlind
         // (temporary version — no per-color texture lookup yet)
         public WriteableBitmap ApplyTextures()
         {
-            List<ColorGroup> colorGroups = FindColorGroups();
-
             foreach (var group in colorGroups)
             {
                 if (group.Pixels.Count == 0)

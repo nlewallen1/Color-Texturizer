@@ -9,14 +9,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Textures\backslash.png" />
+    <None Remove="Textures\cross.png" />
     <None Remove="Textures\diagonal.png" />
     <None Remove="Textures\diamond.png" />
     <None Remove="Textures\dots.png" />
+    <None Remove="Textures\horizontal.png" />
     <None Remove="Textures\hourglass.png" />
+    <None Remove="Textures\leftbracket.png" />
+    <None Remove="Textures\number.png" />
+    <None Remove="Textures\rightbracket.png" />
     <None Remove="Textures\spiral.png" />
     <None Remove="Textures\stairs.png" />
     <None Remove="Textures\stars.png" />
-    <None Remove="Textures\t.png" />
+    <None Remove="Textures\T.png" />
+    <None Remove="Textures\U.png" />
     <None Remove="Textures\vertical.png" />
     <None Remove="Textures\x.png" />
   </ItemGroup>
@@ -26,6 +33,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Textures\backslash.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\cross.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Textures\diagonal.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -35,7 +48,19 @@
     <Content Include="Textures\dots.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Textures\horizontal.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Textures\hourglass.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\leftbracket.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\number.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\rightbracket.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Textures\spiral.png">
@@ -47,7 +72,13 @@
     <Content Include="Textures\stars.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Textures\t.png">
+    <Content Include="Textures\swirl.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\T.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\U.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Textures\vertical.png">

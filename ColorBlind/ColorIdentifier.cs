@@ -3,7 +3,7 @@ using System.Windows.Media;
 
 namespace ColorBlind
 {
-    public class ColorClassifier
+    public class ColorIdentifier
     {
         private void RGBtoHSV(Color color, out double hue, out double saturation, out double value)
         {

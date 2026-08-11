@@ -45,11 +45,10 @@ namespace ColorBlind
                 imageProcessing = new ImageProcessing(writeableBitmap);
 
                 // find all colors and color groups
-                imageProcessing.findAllColors();
-                imageProcessing.FindColorGroups();
+                imageProcessing.FindColors();
 
                 // add colors to the ColorPanel
-                AddColorPreviewsUntextured(imageProcessing.GetColors(), imageProcessing.GetLargestColor());
+                AddColorPreviewsUntextured(imageProcessing.GetColors(), imageProcessing.colorManager.GetLargestColor());
 
             }
         }
@@ -60,7 +59,7 @@ namespace ColorBlind
             if (imageProcessing != null)
             {
                 // add textured colors to the color panel
-                AddColorPreviews(imageProcessing.GetColors(), imageProcessing.GetLargestColor());
+                AddColorPreviews(imageProcessing.GetColors(), imageProcessing.colorManager.GetLargestColor());
                 WriteableBitmap textured = imageProcessing.ApplyTextures();
                 // update the image source to the textured image
                 image.Source = textured;
@@ -99,7 +98,7 @@ namespace ColorBlind
                 };
 
                 // add tooltip with color name and RGB values
-                ColorClassifier colorClassifier = new ColorClassifier();
+                ColorIdentifier colorClassifier = new ColorIdentifier();
                 string name = colorClassifier.GetColorName(color);
 
                 colorSquare.ToolTip = $"{name}\nR:{color.R} G:{color.G} B:{color.B}";
@@ -110,17 +109,16 @@ namespace ColorBlind
         // adds textured color previews to the ColorPanel
         private void AddColorPreviews(Dictionary<Color, int> colors, Color? largestColor)
         {
-            // clear colorpanel
             ColorPanel.Children.Clear();
 
-            // add largest color back
+            var displayColors = new Dictionary<Color, int>(colors);
+
             if (largestColor.HasValue)
             {
-                colors.Add(largestColor.Value, 0);
+                displayColors[largestColor.Value] = 0;
             }
 
-            // add color squares to the ColorPanel
-            foreach (Color color in colors.Keys)
+            foreach (Color color in displayColors.Keys)
             {
                 Border colorSquare = new Border
                 {
@@ -131,10 +129,8 @@ namespace ColorBlind
                     BorderThickness = new Thickness(1)
                 };
 
-                // get the texture path for this color
                 string texturePath = imageProcessing.GetTextureForColor(color);
 
-                // create a swatch preview for this color with the texture
                 if (texturePath != null)
                 {
                     BitmapSource swatch = imageProcessing.CreateSwatchPreview(color, texturePath, 60);
@@ -142,12 +138,10 @@ namespace ColorBlind
                 }
                 else
                 {
-                    // fallback if no texture was assigned to this color
                     colorSquare.Background = new SolidColorBrush(color);
                 }
 
-                // add tooltip with color name and RGB values
-                ColorClassifier colorClassifier = new ColorClassifier();
+                ColorIdentifier colorClassifier = new ColorIdentifier();
                 string name = colorClassifier.GetColorName(color);
 
                 colorSquare.ToolTip = $"{name}\nR:{color.R} G:{color.G} B:{color.B}";

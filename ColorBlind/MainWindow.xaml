@@ -31,7 +31,7 @@
             <StackPanel.Resources>
                 <Style TargetType="Button"
                    BasedOn="{StaticResource MaterialDesignPaperLightButton}">
-                    <Setter Property="Width" Value="100" />
+                    <Setter Property="Width" Value="130" />
                     <Setter Property="Margin" Value="10, 10, 10, 10" />
                 </Style>
             </StackPanel.Resources>
@@ -41,8 +41,8 @@
                 Click="UploadButton_Click"/>
             
             <Button 
-                Content="Test"
-                Click="TestButton_Click"/>
+                Content="Add texture"
+                Click="TextureButton_Click"/>
         </StackPanel>
 
         <ScrollViewer

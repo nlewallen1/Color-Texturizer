@@ -12,7 +12,6 @@
     <None Remove="Textures\diagonal.png" />
     <None Remove="Textures\diamond.png" />
     <None Remove="Textures\dots.png" />
-    <None Remove="Textures\horizontal.png" />
     <None Remove="Textures\hourglass.png" />
     <None Remove="Textures\spiral.png" />
     <None Remove="Textures\stairs.png" />

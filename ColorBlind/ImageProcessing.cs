@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using System.Windows;
 using System.Windows.Media;
@@ -50,62 +51,16 @@ namespace ColorBlind
             return colors;
         }
 
-        // loops through all pixels, adds unique colors to the list
-        public void findAllColors()
+
+        // rounds a color to the nearest multiple of `step` per channel, to group near-identical shades
+        private Color QuantizeColor(byte r, byte g, byte b, int step = 16)
         {
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    int index = y * stride + x * 4;
-
-                    byte blue = pixels[index];
-                    byte green = pixels[index + 1];
-                    byte red = pixels[index + 2];
-
-                    // ignore near-white and near-black pixels
-                    if (red > 245 && green > 245 && blue > 245)
-                        continue;
-
-                    if (red < 10 && green < 10 && blue < 10)
-                        continue;
-
-                    Color color = Color.FromRgb(red, green, blue);
-
-                    if (colors.ContainsKey(color))
-                    {
-                        colors[color]++;
-                    }
-                    else
-                    {
-                        colors[color] = 1;
-                    }
-                }
-            }
-            // TODO: this is only temporary, refine later
-            trimColors(500);
-
-            // assign textures to each color
-            textureAssigner(colors);
+            byte qr = (byte)((r / step) * step);
+            byte qg = (byte)((g / step) * step);
+            byte qb = (byte)((b / step) * step);
+            return Color.FromRgb(qr, qg, qb);
         }
 
-        // remove noise colors
-        public void trimColors(int threshold)
-        {
-            List<Color> colorsToRemove = new List<Color>();
-            foreach (var color in colors)
-            {
-                if (color.Value < threshold)
-                {
-                    colorsToRemove.Add(color.Key);
-                }
-            }
-            foreach (var color in colorsToRemove)
-            {
-                colors.Remove(color);
-            }
-
-        }
 
         // assign a texture type to a color randomly, avoiding duplicates
         // randomly assigns a texture file to each newly-found color
@@ -168,17 +123,98 @@ namespace ColorBlind
                 MessageBox.Show($"Color: R={color.Key.R}, G={color.Key.G}, B={color.Key.B} (Count: {color.Value})");
             }
         }
-
-        // calculate color distance
-        private double ColorDistance(byte r1, byte g1, byte b1, byte r2, byte g2, byte b2)
+    
+        // try pushing a pixel onto the stack
+        private void TryPush(int x, int y, Stack<Point> stack, bool[,] visited)
         {
-            double dr = r1 - r2;
-            double dg = g1 - g2;
-            double db = b1 - b2;
-            return Math.Sqrt(dr * dr + dg * dg + db * db);
+            if (x < 0 || x >= width || y < 0 || y >= height)
+                return;
+            if (visited[x, y])
+                return;
+
+            visited[x, y] = true; // mark as soon as it's queued, not when it's dequeued
+            stack.Push(new Point(x, y));
         }
-        // modified flood fill algorithm to find connected pixels of the same color
-        private void FloodFill(int startX, int startY, Color seedColor, bool[,] visited, List<Point> pixelsList, double tolerance = 20.0)
+
+        // finds all colors in the image
+        public void findAllColors()
+        {
+            colors.Clear();
+
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    int index = y * stride + x * 4;
+                    byte blue = pixels[index];
+                    byte green = pixels[index + 1];
+                    byte red = pixels[index + 2];
+
+                    if (red > 245 && green > 245 && blue > 245) continue;
+                    if (red < 10 && green < 10 && blue < 10) continue;
+
+                    Color color = QuantizeColor(red, green, blue);
+
+                    if (colors.ContainsKey(color))
+                        colors[color]++;
+                    else
+                        colors[color] = 1;
+                }
+            }
+
+            trimColors();
+            textureAssigner(colors);
+        }
+
+        // trims noisy colors
+        public void trimColors(int minPixelCount = 500)
+        {
+            var colorsToRemove = colors.Where(c => c.Value < minPixelCount)
+                                        .Select(c => c.Key)
+                                        .ToList();
+
+            foreach (var color in colorsToRemove)
+                colors.Remove(color);
+        }
+
+        // find groups of colors using flood fill
+        public List<ColorGroup> FindColorGroups()
+        {
+            bool[,] visited = new bool[width, height];
+            List<ColorGroup> colorGroups = new List<ColorGroup>();
+
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    if (visited[x, y])
+                        continue;
+
+                    int index = y * stride + x * 4;
+                    byte blue = pixels[index];
+                    byte green = pixels[index + 1];
+                    byte red = pixels[index + 2];
+                    Color pixelColor = QuantizeColor(red, green, blue);
+
+                    if (!colors.ContainsKey(pixelColor))
+                    {
+                        visited[x, y] = true;
+                        continue;
+                    }
+
+                    ColorGroup colorGroup = new ColorGroup();
+                    colorGroup.Color = pixelColor;
+                    colorGroup.Pixels = new List<Point>();
+                    FloodFill(x, y, pixelColor, visited, colorGroup.Pixels);
+                    colorGroups.Add(colorGroup);
+                }
+            }
+
+            return colorGroups;
+        }
+
+        // find neighboring pixels that should be in the sasme color group
+        private void FloodFill(int startX, int startY, Color targetColor, bool[,] visited, List<Point> pixelsList)
         {
             var stack = new Stack<Point>();
             stack.Push(new Point(startX, startY));
@@ -194,10 +230,9 @@ namespace ColorBlind
                 byte blue = pixels[index];
                 byte green = pixels[index + 1];
                 byte red = pixels[index + 2];
+                Color pixelColor = QuantizeColor(red, green, blue);
 
-                // compare against the seed color, not exact match
-                double distance = ColorDistance(red, green, blue, seedColor.R, seedColor.G, seedColor.B);
-                if (distance > tolerance)
+                if (pixelColor != targetColor)
                     continue;
 
                 pixelsList.Add(new Point(x, y));
@@ -209,54 +244,7 @@ namespace ColorBlind
             }
         }
 
-        private void TryPush(int x, int y, Stack<Point> stack, bool[,] visited)
-        {
-            if (x < 0 || x >= width || y < 0 || y >= height)
-                return;
-            if (visited[x, y])
-                return;
 
-            visited[x, y] = true; // mark as soon as it's queued, not when it's dequeued
-            stack.Push(new Point(x, y));
-        }
-
-        // find groups of color using flood fill algorithm
-        public List<ColorGroup> FindColorGroups()
-        {
-            bool[,] visited = new bool[width, height];
-            List<ColorGroup> colorGroups = new List<ColorGroup>();
-
-            // loop through image
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    if (visited[x, y])
-                        continue;
-
-                    int index = y * stride + x * 4;
-                    byte blue = pixels[index];
-                    byte green = pixels[index + 1];
-                    byte red = pixels[index + 2];
-                    Color pixelColor = Color.FromRgb(red, green, blue);
-
-                    // only start a group if this color is one we're tracking
-                    if (!colors.ContainsKey(pixelColor))
-                    {
-                        visited[x, y] = true; // mark so we don't re-check this pixel's color again
-                        continue;
-                    }
-
-                    ColorGroup colorGroup = new ColorGroup();
-                    colorGroup.Color = pixelColor;
-                    colorGroup.Pixels = new List<Point>();
-                    FloodFill(x, y, pixelColor, visited, colorGroup.Pixels);
-                    colorGroups.Add(colorGroup);
-                }
-            }
-
-            return colorGroups;
-        }
         // list all color groups and their pixel counts
         public void ListColorGroups(List<ColorGroup> colorGroups)
         {

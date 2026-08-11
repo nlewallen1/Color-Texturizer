@@ -150,9 +150,6 @@ namespace ColorBlind
                     byte green = pixels[index + 1];
                     byte red = pixels[index + 2];
 
-                    if (red > 245 && green > 245 && blue > 245) continue;
-                    if (red < 10 && green < 10 && blue < 10) continue;
-
                     Color color = QuantizeColor(red, green, blue);
 
                     if (colors.ContainsKey(color))
@@ -169,12 +166,17 @@ namespace ColorBlind
         // trims noisy colors
         public void trimColors(int minPixelCount = 500)
         {
-            var colorsToRemove = colors.Where(c => c.Value < minPixelCount)
-                                        .Select(c => c.Key)
-                                        .ToList();
-
-            foreach (var color in colorsToRemove)
+            // remove noise first
+            var noise = colors.Where(c => c.Value < minPixelCount).Select(c => c.Key).ToList();
+            foreach (var color in noise)
                 colors.Remove(color);
+
+            // whatever remains, drop the single largest color 
+            if (colors.Count > 1)
+            {
+                Color largest = colors.OrderByDescending(c => c.Value).First().Key;
+                colors.Remove(largest);
+            }
         }
 
         // find groups of colors using flood fill

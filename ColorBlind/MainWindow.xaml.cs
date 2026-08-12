@@ -73,20 +73,23 @@ namespace ColorBlind
         // adds untextured color previews to the ColorPanel
         private void AddColorPreviewsUntextured(Dictionary<Color, int> colors, Color? largestColor)
         {
-            // clear colorpanel
             ColorPanel.Children.Clear();
-
+            // work on a copy of the colors dictionary
             var displayColors = new Dictionary<Color, int>(colors);
 
-            // add largest color back
             if (largestColor.HasValue)
             {
-                displayColors[largestColor.Value] = 0;
+                displayColors[largestColor.Value] = int.MaxValue;
             }
 
-            // add color squares to the ColorPanel
-            foreach (Color color in displayColors.Keys)
+            // sort largest region first
+            var sortedColors = displayColors.OrderByDescending(c => c.Value);
+
+            // create a color square for each color and add it to the ColorPanel
+            foreach (var kvp in sortedColors)
             {
+                Color color = kvp.Key;
+
                 Border colorSquare = new Border
                 {
                     Width = 60,
@@ -110,18 +113,22 @@ namespace ColorBlind
         private void AddColorPreviews(Dictionary<Color, int> colors, Color? largestColor)
         {
             ColorPanel.Children.Clear();
-
-            // work on a copy
+            // work on a copy of the colors dictionary
             var displayColors = new Dictionary<Color, int>(colors);
 
             if (largestColor.HasValue)
             {
-                displayColors[largestColor.Value] = 0;
+                displayColors[largestColor.Value] = int.MaxValue;
             }
 
+            // sort largest region first
+            var sortedColors = displayColors.OrderByDescending(c => c.Value);
+
             // create a color square for each color and add it to the ColorPanel
-            foreach (Color color in displayColors.Keys)
+            foreach (var kvp in sortedColors)
             {
+                Color color = kvp.Key;
+
                 Border colorSquare = new Border
                 {
                     Width = 60,
@@ -131,7 +138,7 @@ namespace ColorBlind
                     BorderThickness = new Thickness(1)
                 };
 
-                // get texture for the color and create a swatch preview
+                // get the texture path for the color
                 string texturePath = imageProcessing.GetTextureForColor(color);
 
                 if (texturePath != null)

@@ -56,12 +56,12 @@ namespace ColorBlind
                 }
             }
 
-            trimColors();
+            TrimColors();
             return colors;
         }
 
         // trims noisy colors and pulls out the single largest (background) color
-        public void trimColors(double minPixelPercent = 0.5)
+        public void TrimColors(double minPixelPercent = 0.2)
         {
             int totalPixels = width * height;
             int minPixelCount = (int)(totalPixels * (minPixelPercent / 100.0));

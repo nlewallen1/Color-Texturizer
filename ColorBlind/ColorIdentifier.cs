@@ -5,6 +5,7 @@ namespace ColorBlind
 {
     public class ColorIdentifier
     {
+        // Converts RGB color to HSV color space
         private void RGBtoHSV(Color color, out double hue, out double saturation, out double value)
         {
             double r = color.R / 255.0;
@@ -28,12 +29,14 @@ namespace ColorBlind
                 hue = 60 * ((r - g) / difference) + 240;
         }
 
+        // determine a name for the color
         public string GetColorName(Color color)
         {
             double hue, saturation, value;
+            // work with HSV instead of RGB for better color categorization
             RGBtoHSV(color, out hue, out saturation, out value);
 
-            // ---- Grayscale family: judged by value alone once saturation is very low ----
+            // judge grayscales
             if (saturation < 0.12)
             {
                 if (value > 0.92) return "White";
@@ -43,21 +46,17 @@ namespace ColorBlind
                 return "Black";
             }
 
-            // ---- Brown: dark-to-mid, moderately-saturated red/orange ----
-            // Real-world browns cluster in the orange hue range but read as a
-            // distinct category rather than "dark orange" once value drops.
+            // check for brown
             bool isBrownHueRange = hue >= 10 && hue < 50;
             if (isBrownHueRange && value < 0.65 && saturation > 0.25)
                 return "Brown";
 
-            // ---- Pink: low-saturation red/magenta, treated as its own category ----
-            // rather than a narrow hue slice, since most real pinks sit near
-            // red/magenta hues but are defined by being light and desaturated.
+            // check for pink
             bool isPinkHueRange = hue >= 320 || hue < 15;
             if (isPinkHueRange && value > 0.75 && saturation < 0.55 && saturation > 0.08)
                 return "Pink";
 
-            // ---- Base hue name ----
+            // check for other colors based on hue
             string name;
             if (hue < 15 || hue >= 345) name = "Red";
             else if (hue < 40) name = "Orange";
@@ -69,7 +68,7 @@ namespace ColorBlind
             else if (hue < 345) name = "Magenta";
             else name = "Red";
 
-            // ---- Brightness / saturation modifiers ----
+            // determine shade
             if (value < 0.25)
                 return "Very Dark " + name;
 

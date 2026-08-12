@@ -111,6 +111,7 @@ namespace ColorBlind
         {
             ColorPanel.Children.Clear();
 
+            // work on a copy
             var displayColors = new Dictionary<Color, int>(colors);
 
             if (largestColor.HasValue)
@@ -118,6 +119,7 @@ namespace ColorBlind
                 displayColors[largestColor.Value] = 0;
             }
 
+            // create a color square for each color and add it to the ColorPanel
             foreach (Color color in displayColors.Keys)
             {
                 Border colorSquare = new Border
@@ -129,6 +131,7 @@ namespace ColorBlind
                     BorderThickness = new Thickness(1)
                 };
 
+                // get texture for the color and create a swatch preview
                 string texturePath = imageProcessing.GetTextureForColor(color);
 
                 if (texturePath != null)
@@ -141,6 +144,7 @@ namespace ColorBlind
                     colorSquare.Background = new SolidColorBrush(color);
                 }
 
+                // add tooltip with color name and RGB values
                 ColorIdentifier colorClassifier = new ColorIdentifier();
                 string name = colorClassifier.GetColorName(color);
 

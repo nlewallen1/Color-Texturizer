@@ -13,10 +13,14 @@ namespace ColorBlind
         private int height;
         private int stride;
 
+        // dictionary to store colors and their pixel counts
         private Dictionary<Color, int> colors = new Dictionary<Color, int>();
+        // list of color groups
         private List<ColorGroup> colorGroups = new List<ColorGroup>();
+        // hold largest color (to avoid backgrounds being included) to remove later
         private Color? largestColor = null;
 
+        // constructor
         public ColorManager(byte[] pixels, int width, int height, int stride)
         {
             this.pixels = pixels;
@@ -102,8 +106,10 @@ namespace ColorBlind
         public List<ColorGroup> FindColorGroups()
         {
             colorGroups.Clear();
+            // create a visited array to keep track of which pixels have been processed
             bool[,] visited = new bool[width, height];
 
+            // loop through each pixel
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
@@ -111,19 +117,23 @@ namespace ColorBlind
                     if (visited[x, y])
                         continue;
 
+                    // get the color of the current pixel
                     int index = y * stride + x * 4;
                     byte blue = pixels[index];
                     byte green = pixels[index + 1];
                     byte red = pixels[index + 2];
 
+                    // quantize the color to group similar shades
                     Color pixelColor = QuantizeColor(red, green, blue);
 
+                    // if this is not a significant color, move on
                     if (!colors.ContainsKey(pixelColor))
                     {
                         visited[x, y] = true;
                         continue;
                     }
 
+                    // create a new color group and perform flood fill to find all connected pixels of the same color
                     ColorGroup colorGroup = new ColorGroup();
                     colorGroup.Color = pixelColor;
                     colorGroup.Pixels = new List<Point>();
@@ -135,6 +145,7 @@ namespace ColorBlind
             return colorGroups;
         }
 
+        // try to push a pixel onto the stack for flood fill, check if its out of bounds or visited
         private void TryPush(int x, int y, Stack<Point> stack, bool[,] visited)
         {
             if (x < 0 || x >= width || y < 0 || y >= height)
@@ -146,14 +157,19 @@ namespace ColorBlind
             stack.Push(new Point(x, y));
         }
 
+        // flood fill algorithm to find all connected pixels of the same color
         private void FloodFill(int startX, int startY, Color targetColor, bool[,] visited, List<Point> pixelsList)
         {
+            // use a stack to avoid stack overflow with recursion
             var stack = new Stack<Point>();
+            // start from the first pixel
             stack.Push(new Point(startX, startY));
             visited[startX, startY] = true;
 
+            // loop until there are no more pixels
             while (stack.Count > 0)
             {
+                // get the next pixel from the stack
                 Point p = stack.Pop();
                 int x = (int)p.X;
                 int y = (int)p.Y;
@@ -162,13 +178,17 @@ namespace ColorBlind
                 byte blue = pixels[index];
                 byte green = pixels[index + 1];
                 byte red = pixels[index + 2];
+                // get the color bucket
                 Color pixelColor = QuantizeColor(red, green, blue);
 
+                // move on if the pixel color does not match
                 if (pixelColor != targetColor)
                     continue;
 
+                // color matches, so add it to the connected pixels list
                 pixelsList.Add(new Point(x, y));
 
+                // push neighboring pixels onto the stack
                 TryPush(x + 1, y, stack, visited);
                 TryPush(x - 1, y, stack, visited);
                 TryPush(x, y + 1, stack, visited);

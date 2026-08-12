@@ -8,6 +8,7 @@ namespace ColorBlind
 {
     public class ImageProcessing
     {
+        // managers for color and texture processing
         public ColorManager colorManager;
         public TextureManager textureManager;
 
@@ -17,6 +18,7 @@ namespace ColorBlind
         private int stride;
         private byte[] pixels;
 
+        // constructor
         public ImageProcessing(WriteableBitmap bitmap)
         {
             bm = bitmap;
@@ -29,7 +31,7 @@ namespace ColorBlind
             textureManager = new TextureManager(pixels, width, height, stride, bm.DpiX, bm.DpiY);
         }
 
-        // runs color detection + grouping + texture assignment in one call
+        // finds colors, color groups, assigns textures
         public void FindColors()
         {
             colorManager.FindAllColors();
@@ -37,6 +39,7 @@ namespace ColorBlind
             textureManager.TextureAssigner(colorManager.GetColors());
         }
 
+        // returns the pixel data of the image as a byte array
         public byte[] GetBytes()
         {
             byte[] buffer = new byte[height * stride];
@@ -44,16 +47,13 @@ namespace ColorBlind
             return buffer;
         }
 
-        public List<ColorGroup> GetColorGroups()
-        {
-            return colorManager.GetColorGroups();
-        }
-
+        // get colors with pixel counts
         public Dictionary<Color, int> GetColors()
         {
             return colorManager.GetColors();
         }
 
+        // get the texture bitmap from TextureManager
         public WriteableBitmap ApplyTextures()
         {
             WriteableBitmap result = textureManager.ApplyTextures(colorManager.GetColorGroups());
@@ -61,11 +61,13 @@ namespace ColorBlind
             return result;
         }
 
+        // get texture for a color
         public string GetTextureForColor(Color color)
         {
             return textureManager.GetTextureForColor(color);
         }
 
+        // create color preview swatch
         public BitmapSource CreateSwatchPreview(Color baseColor, string texturePath, int size = 60)
         {
             return textureManager.CreateSwatchPreview(baseColor, texturePath, size);

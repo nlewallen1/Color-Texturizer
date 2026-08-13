@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:ColorBlind"
         mc:Ignorable="d"
         Icon="/Assets/colorblindlogo.ico"
-        Title="MainWindow" Height="900" Width="1600"
+        Title="Color Texturizer" Height="900" Width="1600"
         Background= "{DynamicResource MaterialDesignPaper}">
     <Grid>
 

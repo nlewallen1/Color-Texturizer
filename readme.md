@@ -3,12 +3,12 @@
 A WPF application assigning textures to color regions to help colorblind users distinguish different colors on color-coded maps, charts, etc. Inspired by my own experience being red-green colorblind.
  
 **Example 1**
-![Example 1 before](nfl-test.png)
-![Example 1 after](nfl-test-textured.png)
+![Example 1 before](Screenshots/nfl-test.png)
+![Example 1 after](Screenshots/nfl-test-textured.png)
 
 **Example 2**
-![Example 2 before](severe-test.png)
-![Example 2 after](severe-test-textured.png)
+![Example 2 before](Screenshots/severe-test.png)
+![Example 2 after](Screenshots/severe-test-textured.png)
 
 ## Summary
 The program finds all the colors in an image, trims the smallest colors to avoid noise, and determines groups of connected pixels sharing these colors. The bounds of the color regions are then determined, and textures placed over the regions to give them a unique trait besides color alone.

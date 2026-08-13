@@ -5,7 +5,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace ColorBlind
+namespace ColorTexturizer
 {
     public class TextureManager
     {

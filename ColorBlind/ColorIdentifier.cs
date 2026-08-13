@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Media;
 
-namespace ColorBlind
+namespace ColorTexturizer
 {
     public class ColorIdentifier
     {

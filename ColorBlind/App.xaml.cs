@@ -2,7 +2,7 @@
 using System.Data;
 using System.Windows;
 
-namespace ColorBlind
+namespace ColorTexturizer
 {
     /// <summary>
     /// Interaction logic for App.xaml

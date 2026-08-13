@@ -11,7 +11,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Linq;
 
-namespace ColorBlind
+namespace ColorTexturizer
 {
 
     public partial class MainWindow : Window

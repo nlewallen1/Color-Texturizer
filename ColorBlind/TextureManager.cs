@@ -37,11 +37,6 @@ namespace ColorBlind
             // get textures path
             string texturesFolder = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Textures");
 
-            if (!System.IO.Directory.Exists(texturesFolder))
-            {
-                System.Diagnostics.Debug.WriteLine($"Textures folder not found: {texturesFolder}");
-                return;
-            }
             // get all texture files in the folder
             string[] textureFiles = System.IO.Directory.GetFiles(texturesFolder, "*.*")
                 .Where(f => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
@@ -49,22 +44,10 @@ namespace ColorBlind
                          || f.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase))
                 .ToArray();
 
-            if (textureFiles.Length == 0)
-            {
-                System.Diagnostics.Debug.WriteLine("No texture files found in Textures folder.");
-                return;
-            }
-
             // find colors that don't have an assigned texture yet
             List<Color> unassigned = colors.Keys.Where(c => !colorTextures.ContainsKey(c)).ToList();
             if (unassigned.Count == 0)
                 return;
-
-            if (unassigned.Count > textureFiles.Length)
-            {
-                System.Diagnostics.Debug.WriteLine(
-                    $"Warning: {unassigned.Count} colors but only {textureFiles.Length} textures available — some will repeat.");
-            }
 
             // shuffle the texture files
             List<string> shuffled = textureFiles.ToList();
@@ -89,12 +72,6 @@ namespace ColorBlind
             {
                 if (group.Pixels.Count == 0)
                     continue;
-
-                if (!colorTextures.ContainsKey(group.Color))
-                {
-                    System.Diagnostics.Debug.WriteLine($"No texture assigned for color {group.Color}, skipping.");
-                    continue;
-                }
 
                 // load the texture for this color
                 string texturePath = colorTextures[group.Color];

@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="ColorTexturizer.Core/ColorTexturizer.Core.csproj" Id="9ff83966-b225-40fe-ae7d-cde4cb3f57d8" />
   <Project Path="ColorTexturizer/ColorTexturizer.csproj" />
 </Solution>

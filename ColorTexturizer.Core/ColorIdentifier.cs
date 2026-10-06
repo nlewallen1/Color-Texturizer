@@ -1,12 +1,9 @@
-﻿using System;
-using System.Windows.Media;
-
-namespace ColorTexturizer
+﻿namespace ColorTexturizer.Core
 {
     public class ColorIdentifier
     {
         // Converts RGB color to HSV color space
-        private void RGBtoHSV(Color color, out double hue, out double saturation, out double value)
+        private void RGBtoHSV(RgbColor color, out double hue, out double saturation, out double value)
         {
             double r = color.R / 255.0;
             double g = color.G / 255.0;
@@ -30,7 +27,7 @@ namespace ColorTexturizer
         }
 
         // determine a name for the color
-        public string GetColorName(Color color)
+        public string GetColorName(RgbColor color)
         {
             double hue, saturation, value;
             // work with HSV instead of RGB for better color categorization

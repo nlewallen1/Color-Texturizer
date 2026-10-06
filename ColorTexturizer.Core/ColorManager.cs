@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Windows;
-using System.Windows.Media;
-
-namespace ColorTexturizer
+﻿namespace ColorTexturizer.Core
 {
     public class ColorManager
     {
@@ -14,11 +8,11 @@ namespace ColorTexturizer
         private int stride;
 
         // dictionary to store colors and their pixel counts
-        private Dictionary<Color, int> colors = new Dictionary<Color, int>();
+        private Dictionary<RgbColor, int> colors = new Dictionary<RgbColor, int>();
         // list of color groups
         private List<ColorGroup> colorGroups = new List<ColorGroup>();
         // hold largest color (to avoid backgrounds being included) to remove later
-        private Color? largestColor = null;
+        private RgbColor? largestColor = null;
 
         // constructor
         public ColorManager(byte[] pixels, int width, int height, int stride)
@@ -30,7 +24,7 @@ namespace ColorTexturizer
         }
 
         // finds all colors in the image
-        public Dictionary<Color, int> FindAllColors()
+        public Dictionary<RgbColor, int> FindAllColors()
         {
             colors.Clear();
             largestColor = null;
@@ -44,7 +38,7 @@ namespace ColorTexturizer
                     byte green = pixels[index + 1];
                     byte red = pixels[index + 2];
 
-                    Color color = QuantizeColor(red, green, blue);
+                    RgbColor color = QuantizeColor(red, green, blue);
 
                     if (color.R > 220 && color.G > 220 && color.B > 220) continue;
                     if (color.R < 30 && color.G < 30 && color.B < 30) continue;
@@ -72,27 +66,27 @@ namespace ColorTexturizer
 
             if (colors.Count > 1)
             {
-                Color largest = colors.OrderByDescending(c => c.Value).First().Key;
+                RgbColor largest = colors.OrderByDescending(c => c.Value).First().Key;
                 largestColor = largest;
                 colors.Remove(largest);
             }
         }
 
         // rounds a color to the nearest multiple of `step` per channel, to group near-identical shades
-        private Color QuantizeColor(byte r, byte g, byte b, int step = 16)
+        private RgbColor QuantizeColor(byte r, byte g, byte b, int step = 16)
         {
             byte qr = (byte)((r / step) * step);
             byte qg = (byte)((g / step) * step);
             byte qb = (byte)((b / step) * step);
-            return Color.FromRgb(qr, qg, qb);
+            return new RgbColor(qr, qg, qb);
         }
 
-        public Color? GetLargestColor()
+        public RgbColor? GetLargestColor()
         {
             return largestColor;
         }
 
-        public Dictionary<Color, int> GetColors()
+        public Dictionary<RgbColor, int> GetColors()
         {
             return colors;
         }
@@ -124,7 +118,7 @@ namespace ColorTexturizer
                     byte red = pixels[index + 2];
 
                     // quantize the color to group similar shades
-                    Color pixelColor = QuantizeColor(red, green, blue);
+                    RgbColor pixelColor = QuantizeColor(red, green, blue);
 
                     // if this is not a significant color, move on
                     if (!colors.ContainsKey(pixelColor))
@@ -135,8 +129,8 @@ namespace ColorTexturizer
 
                     // create a new color group and perform flood fill to find all connected pixels of the same color
                     ColorGroup colorGroup = new ColorGroup();
-                    colorGroup.Color = pixelColor;
-                    colorGroup.Pixels = new List<Point>();
+                    colorGroup.RgbColor = pixelColor;
+                    colorGroup.Pixels = new List<PixelPoint>();
                     FloodFill(x, y, pixelColor, visited, colorGroup.Pixels);
                     colorGroups.Add(colorGroup);
                 }
@@ -146,7 +140,7 @@ namespace ColorTexturizer
         }
 
         // try to push a pixel onto the stack for flood fill, check if its out of bounds or visited
-        private void TryPush(int x, int y, Stack<Point> stack, bool[,] visited)
+        private void TryPush(int x, int y, Stack<PixelPoint> stack, bool[,] visited)
         {
             if (x < 0 || x >= width || y < 0 || y >= height)
                 return;
@@ -154,23 +148,23 @@ namespace ColorTexturizer
                 return;
 
             visited[x, y] = true;
-            stack.Push(new Point(x, y));
+            stack.Push(new PixelPoint(x, y));
         }
 
         // flood fill algorithm to find all connected pixels of the same color
-        private void FloodFill(int startX, int startY, Color targetColor, bool[,] visited, List<Point> pixelsList)
+        private void FloodFill(int startX, int startY, RgbColor targetColor, bool[,] visited, List<PixelPoint> pixelsList)
         {
             // use a stack to avoid stack overflow with recursion
-            var stack = new Stack<Point>();
+            var stack = new Stack<PixelPoint>();
             // start from the first pixel
-            stack.Push(new Point(startX, startY));
+            stack.Push(new PixelPoint(startX, startY));
             visited[startX, startY] = true;
 
             // loop until there are no more pixels
             while (stack.Count > 0)
             {
                 // get the next pixel from the stack
-                Point p = stack.Pop();
+                PixelPoint p = stack.Pop();
                 int x = (int)p.X;
                 int y = (int)p.Y;
 
@@ -179,14 +173,14 @@ namespace ColorTexturizer
                 byte green = pixels[index + 1];
                 byte red = pixels[index + 2];
                 // get the color bucket
-                Color pixelColor = QuantizeColor(red, green, blue);
+                RgbColor pixelColor = QuantizeColor(red, green, blue);
 
                 // move on if the pixel color does not match
                 if (pixelColor != targetColor)
                     continue;
 
                 // color matches, so add it to the connected pixels list
-                pixelsList.Add(new Point(x, y));
+                pixelsList.Add(new PixelPoint(x, y));
 
                 // push neighboring pixels onto the stack
                 TryPush(x + 1, y, stack, visited);

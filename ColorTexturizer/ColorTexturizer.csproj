@@ -148,6 +148,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ColorTexturizer.Core\ColorTexturizer.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="Assets\colorblindlogo.ico" />
   </ItemGroup>
 

@@ -1,23 +1,20 @@
-﻿using System.Reflection;
-using System.Text;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System.Linq;
+using ColorTexturizer.Core; // Core engine namespace
 
 namespace ColorTexturizer
 {
-
     public partial class MainWindow : Window
     {
-        // store the ImageManipulation object as a class member
         private ImageProcessing imageProcessing;
+        private int currentWidth;
+        private int currentHeight;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -26,30 +23,34 @@ namespace ColorTexturizer
         // upload image button
         private void UploadButton_Click(object sender, RoutedEventArgs e)
         {
-            // open a file dialog to select an image
             Microsoft.Win32.OpenFileDialog openFileDialog = new Microsoft.Win32.OpenFileDialog();
             openFileDialog.Filter = "Image files (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg|All files (*.*)|*.*";
+
             if (openFileDialog.ShowDialog() == true)
             {
-                // clear color panel
                 ColorPanel.Children.Clear();
 
-                // load the selected image into the Image control
                 BitmapImage bitmap = new BitmapImage(new Uri(openFileDialog.FileName));
+                currentWidth = bitmap.PixelWidth;
+                currentHeight = bitmap.PixelHeight;
 
-                // convert to writeable bitmap
-                WriteableBitmap writeableBitmap = new WriteableBitmap(bitmap);
-                image.Source = writeableBitmap;
+                // Show loaded image in UI
+                image.Source = bitmap;
 
-                // create ImageManipulation object
-                imageProcessing = new ImageProcessing(writeableBitmap);
+                // Extract raw pixels for the core engine
+                byte[] pixels = bitmap.GetPixelBytes();
 
-                // find all colors and color groups
+                // Create core ImageProcessing instance
+                imageProcessing = new ImageProcessing(pixels, currentWidth, currentHeight);
+
+                // Find all colors and color groups
                 imageProcessing.FindColors();
 
-                // add colors to the ColorPanel
-                AddColorPreviewsUntextured(imageProcessing.GetColors(), imageProcessing.colorManager.GetLargestColor());
-
+                // Add colors to the ColorPanel
+                AddColorPreviewsUntextured(
+                    imageProcessing.GetColors(),
+                    imageProcessing.ColorManager.GetLargestColor()
+                );
             }
         }
 
@@ -58,11 +59,17 @@ namespace ColorTexturizer
         {
             if (imageProcessing != null)
             {
-                // add textured colors to the color panel
-                AddColorPreviews(imageProcessing.GetColors(), imageProcessing.colorManager.GetLargestColor());
-                WriteableBitmap textured = imageProcessing.ApplyTextures();
-                // update the image source to the textured image
-                image.Source = textured;
+                // Add textured colors to the color panel
+                AddColorPreviews(
+                    imageProcessing.GetColors(),
+                    imageProcessing.ColorManager.GetLargestColor()
+                );
+
+                // Apply textures in Core library
+                byte[] texturedPixels = imageProcessing.ApplyTextures();
+
+                // Convert raw bytes back to WPF WriteableBitmap for display
+                image.Source = texturedPixels.ToWriteableBitmap(currentWidth, currentHeight);
             }
             else
             {
@@ -71,24 +78,22 @@ namespace ColorTexturizer
         }
 
         // adds untextured color previews to the ColorPanel
-        private void AddColorPreviewsUntextured(Dictionary<Color, int> colors, Color? largestColor)
+        private void AddColorPreviewsUntextured(Dictionary<RgbColor, int> colors, RgbColor? largestColor)
         {
             ColorPanel.Children.Clear();
-            // work on a copy of the colors dictionary
-            var displayColors = new Dictionary<Color, int>(colors);
+            var displayColors = new Dictionary<RgbColor, int>(colors);
 
             if (largestColor.HasValue)
             {
                 displayColors[largestColor.Value] = int.MaxValue;
             }
 
-            // sort largest region first
             var sortedColors = displayColors.OrderByDescending(c => c.Value);
+            ColorIdentifier colorClassifier = new ColorIdentifier();
 
-            // create a color square for each color and add it to the ColorPanel
             foreach (var kvp in sortedColors)
             {
-                Color color = kvp.Key;
+                RgbColor color = kvp.Key;
 
                 Border colorSquare = new Border
                 {
@@ -97,37 +102,32 @@ namespace ColorTexturizer
                     Margin = new Thickness(15),
                     BorderBrush = Brushes.Black,
                     BorderThickness = new Thickness(1),
-                    Background = new SolidColorBrush(color)
+                    Background = new SolidColorBrush(color.ToMediaColor()) // Convert RgbColor -> WPF Color
                 };
 
-                // add tooltip with color name and RGB values
-                ColorIdentifier colorClassifier = new ColorIdentifier();
                 string name = colorClassifier.GetColorName(color);
-
                 colorSquare.ToolTip = $"{name}\nR:{color.R} G:{color.G} B:{color.B}";
                 ColorPanel.Children.Add(colorSquare);
             }
         }
 
         // adds textured color previews to the ColorPanel
-        private void AddColorPreviews(Dictionary<Color, int> colors, Color? largestColor)
+        private void AddColorPreviews(Dictionary<RgbColor, int> colors, RgbColor? largestColor)
         {
             ColorPanel.Children.Clear();
-            // work on a copy of the colors dictionary
-            var displayColors = new Dictionary<Color, int>(colors);
+            var displayColors = new Dictionary<RgbColor, int>(colors);
 
             if (largestColor.HasValue)
             {
                 displayColors[largestColor.Value] = int.MaxValue;
             }
 
-            // sort largest region first
             var sortedColors = displayColors.OrderByDescending(c => c.Value);
+            ColorIdentifier colorClassifier = new ColorIdentifier();
 
-            // create a color square for each color and add it to the ColorPanel
             foreach (var kvp in sortedColors)
             {
-                Color color = kvp.Key;
+                RgbColor color = kvp.Key;
 
                 Border colorSquare = new Border
                 {
@@ -138,28 +138,23 @@ namespace ColorTexturizer
                     BorderThickness = new Thickness(1)
                 };
 
-                // get the texture path for the color
                 string texturePath = imageProcessing.GetTextureForColor(color);
 
                 if (texturePath != null)
                 {
-                    BitmapSource swatch = imageProcessing.CreateSwatchPreview(color, texturePath, 60);
-                    colorSquare.Background = new ImageBrush(swatch);
+                    // Convert Core PNG bytes -> WPF BitmapImage
+                    byte[] swatchBytes = imageProcessing.CreateSwatchPreview(color, texturePath, 60);
+                    colorSquare.Background = new ImageBrush(swatchBytes.ToBitmapImage());
                 }
                 else
                 {
-                    colorSquare.Background = new SolidColorBrush(color);
+                    colorSquare.Background = new SolidColorBrush(color.ToMediaColor());
                 }
 
-                // add tooltip with color name and RGB values
-                ColorIdentifier colorClassifier = new ColorIdentifier();
                 string name = colorClassifier.GetColorName(color);
-
                 colorSquare.ToolTip = $"{name}\nR:{color.R} G:{color.G} B:{color.B}";
                 ColorPanel.Children.Add(colorSquare);
             }
         }
-
     }
 }
-

@@ -7,8 +7,10 @@ interface ColorSwatchProps {
 }
 
 export const ColorSwatch: React.FC<ColorSwatchProps> = ({ color, isTextured}) => {
+    // define tooltip text
     const tooltip = `${color.name}\nR:${color.r} G:${color.g} B:${color.b}`;
 
+    // return swatch with tooltip, color square
     return (
     <div
         title={tooltip}

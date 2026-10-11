@@ -27,16 +27,23 @@ export function App() {
             backgroundColor: '#303030'
         }}>
             {/* header controls component */}
-            <HeaderControls
-                onUpload={handleUpload}
-                onApplyTexture={handleApplyTexture}
-                isProcessing={isProcessing}
-                hasFile={!!selectedFile}
-            />
+            <div style={{ gridRow: 1, gridColumn: '1 / span 2' }}>
+                <HeaderControls
+                    onUpload={handleUpload}
+                    onApplyTexture={handleApplyTexture}
+                    isProcessing={isProcessing}
+                    hasFile={!!selectedFile}
+                />
+            </div>
             {/* image display component */}
-            <ImageDisplay imageUrl={displayedImageUrl} />
+            <div style={{ gridRow: 2, gridColumn: 1 }}>
+                <ImageDisplay imageUrl={displayedImageUrl} />
+            </div>
+
             {/* color panel component */}
-            <ColorPanel colors={colors} isTextured={isTextured} />
+            <div style={{ gridRow: 2, gridColumn: 2 }}>
+                <ColorPanel colors={colors} isTextured={isTextured} />
+            </div>
         </div>
     );
 }

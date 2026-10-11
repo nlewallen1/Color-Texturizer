@@ -7,8 +7,6 @@ interface ImageDisplayProps {
 export const ImageDisplay: React.FC<ImageDisplayProps> = ({ imageUrl }) => {
   return (
     <div style={{
-      gridRow: 2,
-      gridColumn: 1,
       margin: '20px 0 0 20px',
       overflow: 'auto',
       display: 'flex',

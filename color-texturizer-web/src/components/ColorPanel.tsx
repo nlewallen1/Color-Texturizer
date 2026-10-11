@@ -11,8 +11,6 @@ interface ColorPanelProps {
 export const ColorPanel: React.FC<ColorPanelProps> = ({colors, isTextured}) => {
     return (
         <div style = {{
-            gridRow: 2,
-            gridColumn: 2,
             margin: '30px',
             display: 'flex',
             flexWrap: 'wrap',

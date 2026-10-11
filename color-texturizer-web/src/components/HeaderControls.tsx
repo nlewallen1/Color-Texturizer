@@ -23,8 +23,6 @@ export const HeaderControls: React.FC<HeaderControlsProps> = ({
     return (
         // set position in parent
         <div style = {{
-            gridRow: 1,
-            gridColumn: '1 / span 2',
             display: 'flex',
             alignItems: 'center',
             padding: '10px'

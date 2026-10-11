@@ -8,7 +8,7 @@ interface HeaderControlProps {
 }
 
 // component for header controls
-export const HeaderControls: React.FC<HeaderControlsProps> = ({
+export const HeaderControls: React.FC<HeaderControlProps> = ({
     onUpload,
     onApplyTexture,
     isProcessing,

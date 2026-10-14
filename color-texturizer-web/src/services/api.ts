@@ -9,7 +9,7 @@ export async function extractColors(file: File): Promise<ColorInfo[]> {
   formData.append('file', file);
 
   // send request
-  const response = await fetch(`${API_BASE_URL}/colors`, {
+  const response = await fetch(`${API_BASE_URL}/api/image/colors`, {
     method: 'POST',
     body: formData,
   });
@@ -18,7 +18,7 @@ export async function extractColors(file: File): Promise<ColorInfo[]> {
     throw new Error(`Failed to extract colors (${response.status})`);
   }
 
-  // recieve colors
+  // receive colors
   return response.json();
 }
 
@@ -29,7 +29,7 @@ export async function processImage(file: File): Promise<string> {
   formData.append('file', file);
 
   // send request
-  const response = await fetch(`${API_BASE_URL}/process`, {
+  const response = await fetch(`${API_BASE_URL}/api/image/process`, {
     method: 'POST',
     body: formData,
   });

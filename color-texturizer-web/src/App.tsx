@@ -1,4 +1,3 @@
-import React from 'react';
 import { useColorTexturizer } from './hooks/useColorTexturizer';
 import { HeaderControls } from './components/HeaderControls';
 import { ImageDisplay } from './components/ImageDisplay';

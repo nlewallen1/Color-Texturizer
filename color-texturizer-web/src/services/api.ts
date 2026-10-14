@@ -1,6 +1,6 @@
 import type { ColorInfo } from '../types/color';
 
-const API_BASE_URL = 'http://localhost:5095/api/image';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5095';
 
 // send image to the server to extract colors
 export async function extractColors(file: File): Promise<ColorInfo[]> {

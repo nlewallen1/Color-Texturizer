@@ -5,6 +5,5 @@ export interface ColorInfo {
   hex: string;
   name: string;
   pixelCount: number;
-  texturePath: string | null;
   swatchBase64: string | null;
 }

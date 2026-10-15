@@ -26,7 +26,7 @@ namespace ColorTexturizer.Api.Controllers
             public string Hex { get; set; }
             public string Name { get; set; }
             public int PixelCount { get; set; }
-            public string TexturePath { get; set; }
+            public string SwatchBase64 { get; set; }
         }
 
         // accepts image upload, returns extracted color list as JSON
@@ -64,7 +64,7 @@ namespace ColorTexturizer.Api.Controllers
                 Hex = $"#{kvp.Key.R:X2}{kvp.Key.G:X2}{kvp.Key.B:X2}",
                 Name = classifier.GetColorName(kvp.Key),
                 PixelCount = kvp.Value,
-                TexturePath = processor.GetTextureForColor(kvp.Key)
+                SwatchBase64 = ConvertSwatchPreviewToBase64Uri(processor, kvp.Key)
             }).ToList();
 
             return Ok(response);
@@ -100,5 +100,20 @@ namespace ColorTexturizer.Api.Controllers
             // return the PNG file stream as a response
             return File(outputStream.ToArray(), "image/png");
         }
+        // creates the same color-blended texture preview used by the desktop client
+        // and converts it into a browser-readable Data URI string
+        private static string ConvertSwatchPreviewToBase64Uri(ImageProcessing processor, RgbColor color)
+        {
+            string filePath = processor.GetTextureForColor(color);
+            if (string.IsNullOrEmpty(filePath) || !System.IO.File.Exists(filePath))
+            {
+                return null;
+            }
+
+            byte[] fileBytes = processor.CreateSwatchPreview(color, filePath);
+            string base64 = Convert.ToBase64String(fileBytes);
+            return $"data:image/png;base64,{base64}";
+        }
     }
+
 }

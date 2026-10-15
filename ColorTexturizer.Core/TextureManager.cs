@@ -14,7 +14,6 @@ namespace ColorTexturizer.Core
         private readonly int height;
         private readonly int stride;
 
-        private readonly Random random = new Random();
         // dictionary to store color-texture assignments
         private readonly Dictionary<RgbColor, string> colorTextures = new Dictionary<RgbColor, string>();
 
@@ -27,7 +26,7 @@ namespace ColorTexturizer.Core
             this.stride = stride;
         }
 
-        // randomly assigns a texture file to each newly-found color, avoiding duplicates
+        // assigns a stable texture file to each newly-found color, avoiding duplicates
         public void TextureAssigner(Dictionary<RgbColor, int> colors)
         {
             // get textures path
@@ -48,18 +47,18 @@ namespace ColorTexturizer.Core
             if (unassigned.Count == 0 || textureFiles.Length == 0)
                 return;
 
-            // shuffle the texture files
-            List<string> shuffled = textureFiles.ToList();
-            for (int i = shuffled.Count - 1; i > 0; i--)
-            {
-                int j = random.Next(i + 1);
-                (shuffled[i], shuffled[j]) = (shuffled[j], shuffled[i]);
-            }
+            // Keep assignments stable across the color extraction and processing requests.
+            Array.Sort(textureFiles, StringComparer.OrdinalIgnoreCase);
+            List<RgbColor> sortedColors = unassigned
+                .OrderBy(c => c.R)
+                .ThenBy(c => c.G)
+                .ThenBy(c => c.B)
+                .ToList();
 
-            for (int i = 0; i < unassigned.Count; i++)
+            for (int i = 0; i < sortedColors.Count; i++)
             {
-                string chosen = shuffled[i % shuffled.Count];
-                colorTextures[unassigned[i]] = chosen;
+                string chosen = textureFiles[i % textureFiles.Length];
+                colorTextures[sortedColors[i]] = chosen;
             }
         }
 

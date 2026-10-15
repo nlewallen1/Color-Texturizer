@@ -14,6 +14,7 @@ namespace ColorTexturizer.Api.Controllers
     // handle API requests
     [ApiController]
     [Route("api")]
+    [Route("api/image")]
     public class ImageController : ControllerBase
     {
         // color data transfer object
@@ -101,4 +102,3 @@ namespace ColorTexturizer.Api.Controllers
         }
     }
 }
-
